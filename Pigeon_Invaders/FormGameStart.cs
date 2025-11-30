@@ -21,7 +21,18 @@ namespace Pigeon_Invaders
             pictureBoxPigeonInvaders.SizeMode = PictureBoxSizeMode.Zoom; // opcjonalne, ładne dopasowanie
             pictureBoxPigeonInvaders.BackColor = Color.Transparent;
 
-            player.URL = @"C:\Users\kasia\OneDrive\Dokumenty\C#\Pigeon_Invaders\pigeon_song.mp3";
+            using (var ms = Pigeon_Invaders.Properties.Resources.pigeon_song)
+            using (var fs = new System.IO.FileStream(
+                       System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3"),
+                       System.IO.FileMode.Create, System.IO.FileAccess.Write))
+            {
+                ms.CopyTo(fs);
+            }
+
+            // Teraz ustawiamy URL playera
+            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3");
+            player.URL = tempPath;
+            //player.URL = @"Pigeon_Invaders\pigeon_song.mp3";
             player.settings.volume = 50;
             player.settings.setMode("loop", true); // zapętlanie
             player.controls.play();
