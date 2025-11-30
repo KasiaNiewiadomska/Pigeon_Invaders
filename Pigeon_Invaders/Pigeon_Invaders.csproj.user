@@ -7,9 +7,6 @@
     <Compile Update="FormGameMain.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="FormGameMain.Optimized.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="FormGameStart.cs">
       <SubType>Form</SubType>
     </Compile>
