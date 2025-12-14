@@ -24,17 +24,18 @@ namespace Pigeon_Invaders
             pictureBoxPigeonInvaders.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxPigeonInvaders.BackColor = Color.Transparent;
 
-            // ======= MUZYKA Z ZASOBÓW =======
-            tempPath = Path.Combine(Path.GetTempPath(), "pigeon_song.mp3");
-
-            // Odczyt strumienia z zasobu i zapis do pliku tymczasowego
-            using (var stream = Properties.Resources.pigeon_song) // UnmanagedMemoryStream
-            using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+            using (var ms = Pigeon_Invaders.Properties.Resources.pigeon_song)
+            using (var fs = new System.IO.FileStream(
+                       System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3"),
+                       System.IO.FileMode.Create, System.IO.FileAccess.Write))
             {
-                stream.CopyTo(fileStream);
+                ms.CopyTo(fs);
             }
 
+            // Teraz ustawiamy URL playera
+            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3");
             player.URL = tempPath;
+            //player.URL = @"Pigeon_Invaders\pigeon_song.mp3";
             player.settings.volume = 50;
             player.settings.setMode("loop", true);
             player.controls.play();
