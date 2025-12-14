@@ -4,6 +4,9 @@ using System.IO;
 using System.Windows.Forms;
 using WMPLib;
 
+
+//TO TEKST DODANY CZY WIDZISZ LUBIE ŻABY I RYBKI POZDRAWIAM
+
 namespace Pigeon_Invaders
 {
     public partial class FormGameStart : Form
