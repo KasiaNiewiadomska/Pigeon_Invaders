@@ -27,7 +27,7 @@ namespace Pigeon_Invaders
         private void buttonPlayAgain_Click(object sender, EventArgs e)
         {
             // Zamykamy okno końcowe
-            this.Close();
+            this.Hide();
 
             // Tworzymy nową instancję FormGameMain, czyli nową grę od początku
             FormGameMain newGame = new FormGameMain(startPlayer, startForm);
