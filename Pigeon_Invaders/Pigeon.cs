@@ -1,46 +1,28 @@
-﻿using System.Windows.Forms;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace Pigeon_Invaders
 {
     public class Pigeon
     {
-        public PictureBox Picture { get; private set; }
-        private int speed = 2;
+        public const int Width = 24;
+        public const int Height = 39;
 
-        public Pigeon(Form parent, int x, int y)
+        public float X;
+        public float Y;
+
+        private float speed = 2f;
+
+        public Pigeon(float x, float y)
         {
-            Picture = new PictureBox();
-            Picture.Size = new Size(24, 39);
-            Picture.SizeMode = PictureBoxSizeMode.StretchImage;
-            Picture.Image = Pigeon_Invaders.Properties.Resources.pigeon; // pełna ścieżka
-
-
-            Picture.BackColor = Color.FromArgb(1, 0, 0, 0);
-
-            //Picture.BackColor = Color.Transparent;
-            Picture.Left = x;
-            Picture.Top = y;
-            
-
-            parent.Controls.Add(Picture);
-            Picture.BringToFront();
+            X = x;
+            Y = y;
         }
 
         public void Move()
         {
-            Picture.Top += speed;
+            Y += speed;
         }
 
-        public bool IsOutOfBounds(Form parent)
-        {
-            return Picture.Top > parent.ClientSize.Height;
-        }
-
-        public void Destroy(Form parent)
-        {
-            parent.Controls.Remove(Picture);
-            Picture.Dispose();
-        }
+        public RectangleF Bounds => new RectangleF(X, Y, Width, Height);
     }
 }
