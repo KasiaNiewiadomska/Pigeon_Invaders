@@ -40,6 +40,8 @@ namespace Pigeon_Invaders
             newGame.Show(); // nie ShowDialog
 
         }
+=========
+<<<<<<< HEAD
 
         private void buttonExit_Click(object sender, EventArgs e)
         {
