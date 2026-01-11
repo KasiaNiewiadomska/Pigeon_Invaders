@@ -10,26 +10,19 @@ namespace Pigeon_Invaders
         public float X;
         public float Y;
 
-        private float speed = 5f;   // prędkość pocisku
-        private float angle;        // kąt ruchu w radianach
-
-        private static readonly Random rand = new Random();
+        private float speed = 5f;   // prędkość pocisku (pionowo w górę)
 
         public Power(float startX, float startY)
         {
             X = startX;
             Y = startY;
 
-            // Losowy kąt odchylenia od pionu (-15° do +15°)
-            float degrees = rand.Next(-15, 16);
-            angle = degrees * (float)(Math.PI / 180.0);
         }
 
-        // Aktualizacja pozycji pocisku
+        // Aktualizacja pozycji pocisku - tylko do góry
         public void Move()
         {
-            X += (float)(speed * Math.Sin(angle));
-            Y -= (float)(speed * Math.Cos(angle));
+            Y -= speed;
         }
 
         public RectangleF Bounds => new RectangleF(X, Y, Size, Size);

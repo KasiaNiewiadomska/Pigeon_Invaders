@@ -15,11 +15,25 @@ namespace Pigeon_Invaders
         private readonly List<Power> bullets = new List<Power>();
         private readonly List<Pigeon> pigeons = new List<Pigeon>();
 
+        private readonly List<Feather> feathers = new List<Feather>();
+        private Image featherSprite;
+        private static readonly Random rand = new Random();
+
+        private readonly List<MeatRoll> meatRolls = new List<MeatRoll>();
+        private Image meatRollSprite;
+
+        private const int MaxPigeonsInRow = 14;
+
         private int rowTickCounter = 0;
-        private int rowTickInterval = 50; // co ile ticków tworzymy nowy rząd
+        private int rowTickInterval = 30; // co ile ticków tworzymy nowy rząd
 
         private int points = 0; // licznik punktów
-        private int hearts = 5; // liczba serc na początku gry
+        private float hearts = 5f; // liczba serc na początku gry, typu float bo można 0.5
+
+        private int currentRow = 1;  // numer kolejnego rzędu gołębi (1..10)
+        private int pigeonsInRow = 1;          // aktualna liczba gołębi w rzędzie
+        private bool increasing = true;        // kierunek: true = 1→10, false = 10→1
+        private int patternCycles = 0;          // ile pełnych cykli (1→10 lub 10→1)
 
         private int energyPowerPoints = 1000;
         private int weaponPoints = 1000;
@@ -30,9 +44,42 @@ namespace Pigeon_Invaders
         private Image pigeonSprite;
         private Image powerSprite;
 
+        // level 2
+        private bool level2Started = false;   // czy Level 2 się rozpoczął
+        private bool showLevel2Graphic = false; // czy rysować Level2 na górze ekranu
+        private int level2GraphicTicks = 0;
+        private const int Level2GraphicDuration = 100; // 100 ticków * 20ms = 2s
+        private int level2DelayTicks = 0;     // do opóźnienia tworzenia rzędów
+        private const int Level2DelayDuration = 100; // ~2 sekundy (100 ticków po 20ms)
+        private Image level2Background;       // tło dla Level 2
+
+
+        // level 3
+
+        // level 4
+
+
+        // BOSS
+        private Boss boss = null;
+        private Image bossSprite;
+        private Image bossFightSprite;
+
+        private bool bossFightStarted = false;
+        private bool showBossIntro = false;
+        private int bossIntroTicks = 0;
+        private int bossDelayTicks = 0;
+
+        private const int BossIntroDuration = 100; // ~2s (100 * 20ms)
+        private const int BossDelayDuration = 100;
+
+        private bool bossMusicStarted = false; // czy muzyka Bossa została już włączona
+        private Image bossBackgroundImage; // tło podczas boss fight
+        private bool bossDefeated = false; // true, gdy boss został już pokonany
+
+
         public FormGameMain(WindowsMediaPlayer player, FormGameStart start)
         {
-            // Double buffering
+            // Double buffering - zapobiega migotaniu, gra rysuje się płynniej
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer |
                           ControlStyles.AllPaintingInWmPaint |
                           ControlStyles.UserPaint, true);
@@ -44,13 +91,41 @@ namespace Pigeon_Invaders
             startPlayer = player;
             startForm = start;
 
+            // Przywróć domyślną muzykę menu / początkową gry
+            if (startForm.SoundOn)
+            {
+                startPlayer.controls.stop();
+
+                // ustaw ścieżkę do domyślnej muzyki poziomów 1–2
+                string menuMusicPath = Path.Combine(Path.GetTempPath(), "doveBird.mp3");
+
+
+                if (!File.Exists(menuMusicPath))
+                {
+                    using (var ms = Pigeon_Invaders.Properties.Resources.doveBird)
+                    using (var fs = new FileStream(menuMusicPath, FileMode.Create, FileAccess.Write))
+                    {
+                        ms.CopyTo(fs);
+                    }
+                }
+
+                startPlayer.controls.stop();
+                startPlayer.URL = menuMusicPath;
+                startPlayer.settings.volume = 50;
+                startPlayer.settings.setMode("loop", true);
+                startPlayer.controls.play();
+            }
+
+
             InitSprites();   // <<< pre-scale all images here
             InitTimers();
             InitHud();
 
-            this.MouseDown += FormGameMain_MouseDown;
+            pictureBoxWand.MouseDown += PictureBoxWand_MouseDown;
+            //this.MouseDown += FormGameMain_MouseDown;
         }
 
+        //wszystkie obrazy skalowane raz na początku gry, przyspiesza rendering
         private void InitSprites()
         {
             // GAME BACKGROUND – pre-scale once to form size
@@ -59,8 +134,16 @@ namespace Pigeon_Invaders
             this.BackColor = Color.Black;
 
             // GAME SPRITES – scaled once, use as-is in DrawImage
-            pigeonSprite = new Bitmap(Properties.Resources.pigeon, new Size(Pigeon.Width, Pigeon.Height));
+            pigeonSprite = new Bitmap(Properties.Resources.pigeon, new Size((int)Pigeon.Width, (int)Pigeon.Height));
             powerSprite = new Bitmap(Properties.Resources.power, new Size(Power.Size, Power.Size));
+            featherSprite = new Bitmap(Properties.Resources.feather_violet, new Size(Feather.Width, Feather.Height));
+            meatRollSprite = new Bitmap(Properties.Resources.meat_roll, new Size(MeatRoll.Width, MeatRoll.Height));
+            level2Background = new Bitmap(Properties.Resources.level2, this.ClientSize);
+            
+            bossSprite = new Bitmap(Properties.Resources.boss, new Size(Boss.Width, Boss.Height));
+            bossFightSprite = new Bitmap(Properties.Resources.BossFight, this.ClientSize);
+            bossBackgroundImage = new Bitmap(Properties.Resources.Krakow_square, this.ClientSize);
+
 
             // HUD ICONS – pre-scale to pictureBox sizes and disable runtime scaling
             if (pictureBoxEnergyPower.Width > 0 && pictureBoxEnergyPower.Height > 0)
@@ -109,6 +192,8 @@ namespace Pigeon_Invaders
             }
         }
 
+        //two timers from designer: timerPower and timerPigeon
+
         private void InitTimers()
         {
             // Use timerPower from designer as game loop
@@ -128,16 +213,16 @@ namespace Pigeon_Invaders
                 timerPigeon.Enabled = false;
             }
 
-            //pictureBoxWand.Click += PictureBoxWand_Click;
         }
 
+        //initializing labels from designer
         private void InitHud()
         {
             labelPoints.Text = $"{points}";
             labelPoints.ForeColor = Color.White;
             labelPoints.BackColor = Color.Black;
 
-            labelHeart.Text = hearts.ToString();
+            labelHeart.Text = hearts.ToString("0.0");
             labelHeart.BackColor = Color.Black;
             labelHeart.ForeColor = Color.White;
 
@@ -157,25 +242,27 @@ namespace Pigeon_Invaders
             labelEarlyPigeon.Size = new Size(75, 30);
         }
 
-        // Don’t let WinForms repaint background separately – we draw it in OnPaint
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            // do nothing – background is drawn in OnPaint
-        }
-
         // MAIN GAME LOOP
-        private void TimerPower_Tick(object sender, EventArgs e)
+        private void TimerPower_Tick(object sender, EventArgs e) //wywoływane co tick timera, 50 razy na sekundę
         {
             UpdateBullets();
-            UpdatePigeons();
-            Invalidate(); // triggers OnPaint
-        }
 
-        // Shooting
-        //private void PictureBoxWand_Click(object sender, EventArgs e)
-        //{
-        //    Shoot();
-        //}
+            if (bossFightStarted)
+            {
+                UpdateBossFight();
+            }
+            else
+            {
+                UpdatePigeons();
+            }
+
+            TrySpawnFeather();
+            UpdateFeathers();
+            UpdateMeatRolls();
+            CheckBossFight();
+            Invalidate(); // triggers OnPaint
+        
+        }
 
         private void UpdateBullets()
         {
@@ -187,11 +274,27 @@ namespace Pigeon_Invaders
                 bool bulletRemoved = false;
                 RectangleF bRect = b.Bounds;
 
+                // bullet-boss collision
+                if (boss != null && bRect.IntersectsWith(boss.Bounds))
+                {
+                    boss.Lives--;
+                    bullets.RemoveAt(i);
+
+                    continue;  // przechodzimy do następnego pocisku
+                }
+
                 // Bullet–Pigeon collisions
                 for (int j = pigeons.Count - 1; j >= 0; j--)
                 {
-                    if (bRect.IntersectsWith(pigeons[j].Bounds))
+                    if (bRect.IntersectsWith(pigeons[j].Bounds)) // if rectangle bullet and pigeon are colliding
                     {
+                        var hitPigeon = pigeons[j];
+
+                        // pozycja gołąbka = miejsce śmierci gołębia
+                        float meatX = hitPigeon.X + Pigeon.Width / 2f - MeatRoll.Width / 2f;
+                        float meatY = hitPigeon.Y + Pigeon.Height / 2f - MeatRoll.Height / 2f;
+
+                        meatRolls.Add(new MeatRoll(meatX, meatY));
                         pigeons.RemoveAt(j);
                         bullets.RemoveAt(i);
 
@@ -218,6 +321,17 @@ namespace Pigeon_Invaders
         private void UpdatePigeons()
         {
             rowTickCounter++;
+
+            // sprawdzanie LEVEL 2
+            if (level2Started)
+            {
+                // Opóźnienie startu rzędów w Level2
+                if (level2DelayTicks < Level2DelayDuration)
+                {
+                    level2DelayTicks++;
+                    return; // jeszcze nie tworzymy rzędów
+                }
+            }
 
             // Spawn a new row every rowTickInterval ticks
             if (rowTickCounter >= rowTickInterval)
@@ -265,18 +379,75 @@ namespace Pigeon_Invaders
 
         private void SpawnPigeonRow()
         {
-            int screenCenterX = this.ClientSize.Width / 2;
-            int spacing = 10;
-            int totalRowWidth = 4 * Pigeon.Width + 3 * spacing;
-            int startX = screenCenterX - totalRowWidth / 2;
-            int startY = 10;
+            const int spacing = 15;
 
-            for (int i = 0; i < 4; i++)
+            // start zawsze u góry
+            int startY = -(int)Pigeon.Height;
+
+            // wycentrowanie rzędu
+            int totalRowWidth =
+                pigeonsInRow * (int)Pigeon.Width +
+                (pigeonsInRow - 1) * spacing;
+
+            int startX = (ClientSize.Width - totalRowWidth) / 2;
+
+            for (int i = 0; i < pigeonsInRow; i++)
             {
-                int pigeonX = startX + i * (Pigeon.Width + spacing);
-                pigeons.Add(new Pigeon(pigeonX, startY));
+                // LEVEL2: co drugi gołąb pomijamy
+                if (level2Started && i % 2 != 0) continue;
+
+                int x = startX + i * ((int)Pigeon.Width + spacing);
+
+                if (level2Started)
+                {
+                    // granice rzędu
+                    GetPigeonRowBounds(out float leftBound, out float rightBound);
+
+                    // użycie konstruktora Level2
+                    pigeons.Add(new Pigeon(x, startY, leftBound, rightBound)); //pigeon level 2
+                }
+                else
+                {
+                    pigeons.Add(new Pigeon(x, startY)); //pigeon level 1
+                }
+            }
+
+            // ZMIANA WZORCA
+            if (increasing)
+            {
+                pigeonsInRow++;
+
+                if (pigeonsInRow > MaxPigeonsInRow)
+                {
+                    pigeonsInRow = MaxPigeonsInRow;
+                    patternCycles++;
+
+                    if (patternCycles >= 3)
+                    {
+                        increasing = false;   // zmiana na 10→1
+                        patternCycles = 0;
+                    }
+                }
+            }
+            else
+            {
+                pigeonsInRow--;
+
+                if (pigeonsInRow < 1)
+                {
+                    pigeonsInRow = 1;
+                    patternCycles++;
+
+                    if (patternCycles >= 3)
+                    {
+                        increasing = true;    // zmiana na 1→10
+                        patternCycles = 0;
+                    }
+                }
             }
         }
+
+
         private void Shoot()
         {
             float startX = pictureBoxWand.Left + pictureBoxWand.Width / 2f - Power.Size / 2f;
@@ -300,6 +471,243 @@ namespace Pigeon_Invaders
             this.Close();
         }
 
+        private void TrySpawnFeather()
+        {
+            if (pigeons.Count == 0)
+                return;
+
+            if (rand.NextDouble() < 0.05)
+            {
+                int index = rand.Next(pigeons.Count);
+                var p = pigeons[index];
+
+                float x = p.X + Pigeon.Width / 2f - Feather.Width / 2f;
+                float y = p.Y + Pigeon.Height;
+
+                GetPigeonRowBounds(out float leftBound, out float rightBound);
+                feathers.Add(new Feather(x, y, leftBound, rightBound));
+            }
+        }
+
+        private void UpdateFeathers()
+        {
+            RectangleF wandRect = pictureBoxWand.Bounds;
+
+            for (int i = feathers.Count - 1; i >= 0; i--)
+            {
+                var f = feathers[i];
+                f.Move();
+
+                // kolizja z różdżką
+                if (f.Bounds.IntersectsWith(wandRect))
+                {
+                    feathers.RemoveAt(i);
+
+                    hearts -= 0.5f;
+                    if (hearts < 0) hearts = 0;
+
+                    labelHeart.Text = hearts.ToString("0.0");
+
+                    if (hearts <= 0)
+                    {
+                        GameOver();
+                        return;
+                    }
+
+                    continue;
+                }
+
+                // piórko poza ekranem
+                if (f.Y > this.ClientSize.Height)
+                {
+                    feathers.RemoveAt(i);
+                }
+            }
+        }
+
+        private void UpdateMeatRolls()
+        {
+            RectangleF wandRect = pictureBoxWand.Bounds;
+
+            for (int i = meatRolls.Count - 1; i >= 0; i--)
+            {
+                var m = meatRolls[i];
+                m.Move();
+
+                // kolizja z różdżką = leczenie
+                if (m.Bounds.IntersectsWith(wandRect))
+                {
+                    meatRolls.RemoveAt(i);
+
+                    hearts += 0.5f;
+                    if (hearts > 5f) hearts = 5f;
+
+                    labelHeart.Text = hearts.ToString("0.0");
+                    continue;
+                }
+
+                // poza ekranem
+                if (m.Y > this.ClientSize.Height)
+                {
+                    meatRolls.RemoveAt(i);
+                }
+            }
+        }
+
+        private void CheckBossFight()
+        {
+
+            if (!level2Started && points >= 20000)
+            {
+                level2Started = true;
+                pigeons.Clear();
+                feathers.Clear();
+
+                // pokaż grafikę Level2 na 2s
+                showLevel2Graphic = true;
+                level2GraphicTicks = 0;
+
+                rowTickCounter = 0;
+                level2DelayTicks = 0;
+
+                pigeonsInRow = MaxPigeonsInRow;
+            }
+
+
+            if (bossFightStarted || bossDefeated)
+                return;
+
+            if (points >= 40000)
+            {
+                bossFightStarted = true;
+                showBossIntro = true;
+
+                pigeons.Clear();   // usuń zwykłych wrogów
+                feathers.Clear();
+
+                // Utworzenie bossa TYLKO RAZ
+                float x = ClientSize.Width / 2f - Boss.Width / 2f;
+                boss = new Boss(x, -Boss.Height)
+                {
+                    Lives = 30
+                };
+
+            }
+        }
+
+        private void UpdateBossFight()
+        {
+            if (bossDefeated || boss == null)
+                return; // jeśli boss już pokonany, nic nie rób
+
+            // intro "BOSS FIGHT"
+            if (showBossIntro)
+            {
+                // jeśli muzyka bossa jeszcze nie startowała, zmień ją
+                if (!bossMusicStarted)
+                {
+                    bossMusicStarted = true;
+
+                    // zatrzymaj aktualną muzykę
+                    startPlayer.controls.stop();
+
+                    // przygotuj tymczasowy plik z zasobu StMarysbuglecall
+                    string bossMusicPath = Path.Combine(Path.GetTempPath(), "StMarysbuglecall.mp3");
+                    using (var ms = Pigeon_Invaders.Properties.Resources.StMarysbuglecall)
+                    using (var fs = new FileStream(bossMusicPath, FileMode.Create, FileAccess.Write))
+                    {
+                        ms.CopyTo(fs);
+                    }
+
+                    // ustaw nową muzykę tylko jeśli muzyka jest włączona w opcjach
+                    if (startForm.SoundOn)
+                    {
+                        startPlayer.URL = bossMusicPath;
+                        startPlayer.settings.volume = 50;
+                        startPlayer.settings.setMode("loop", true);
+                        startPlayer.controls.play();
+                    }
+
+                    // Zmień tło na tło Bossa
+                    backgroundImage = bossBackgroundImage;
+
+                }
+
+                bossIntroTicks++;
+                if (bossIntroTicks >= BossIntroDuration)
+                {
+                    showBossIntro = false;
+                }
+                return;
+            }
+
+            // ruch bossa
+            boss.Y += 2;
+
+            if (boss.Y > ClientSize.Height || boss.Bounds.IntersectsWith(pictureBoxWand.Bounds))
+            {
+                GameOver();
+                return;
+            }
+
+            TryBossShoot();
+
+            if (boss.Lives <= 0)
+            {
+                boss = null;
+                bossDefeated = true;
+
+                points += 10000;
+                labelPoints.Text = points.ToString();
+
+                startPlayer.controls.stop();
+
+                ShowWinScreen();
+            }
+
+        }
+
+        private void TryBossShoot()
+        {
+            if (boss == null) return;
+
+            // losowe pióra co tick z 15% szansą
+            if (rand.NextDouble() < 0.05)
+            {
+                GetPigeonRowBounds(out float leftBound, out float rightBound);
+
+                float x = boss.X + rand.Next(0, Boss.Width - Feather.Width);
+                float y = boss.Y + Boss.Height;
+
+                feathers.Add(new Feather(x, y, leftBound, rightBound));
+            }
+        }
+
+        private void ShowWinScreen()
+        {
+            if (timerPower != null)
+                timerPower.Stop();
+
+            FormGameWin winForm = new FormGameWin(startForm, startPlayer);
+            this.Hide();
+            winForm.ShowDialog();
+
+        }
+
+
+        private void GetPigeonRowBounds(out float left, out float right)
+        {
+            int spacing = 15;
+            int pigeonsInRow = MaxPigeonsInRow;
+
+            int totalRowWidth =
+                pigeonsInRow * (int)Pigeon.Width +
+                (pigeonsInRow - 1) * spacing;
+
+            left = (ClientSize.Width - totalRowWidth) / 2f;
+            right = left + totalRowWidth;
+        }
+
         private void buttonExitGame_Click(object sender, EventArgs e)
         {
             if (timerPower != null)
@@ -317,14 +725,25 @@ namespace Pigeon_Invaders
             int mouseX = e.X;
             int newX = mouseX - pictureBoxWand.Width / 2;
 
-            if (newX < 0) newX = 0;
-            if (newX > this.ClientSize.Width - pictureBoxWand.Width)
-                newX = this.ClientSize.Width - pictureBoxWand.Width;
+            // granice rzędu gołębi
+            int spacing = 10;
+            int pigeonsInRow = MaxPigeonsInRow;
+
+            int totalRowWidth = pigeonsInRow * (int)Pigeon.Width + (pigeonsInRow - 1) * spacing;
+            int rowLeft = (this.ClientSize.Width - totalRowWidth) / 2;
+            int rowRight = rowLeft + totalRowWidth;
+
+            // ograniczenie ruchu różdżki do granic rzędu gołębi    
+            int minX = rowLeft;
+            int maxX = rowRight - pictureBoxWand.Width;
+
+            if (newX < minX) newX = minX;
+            if (newX > maxX) newX = maxX;
 
             pictureBoxWand.Left = newX;
         }
 
-        private void FormGameMain_MouseDown(object sender, MouseEventArgs e)
+        private void PictureBoxWand_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
@@ -332,7 +751,8 @@ namespace Pigeon_Invaders
             }
         }
 
-        // Single place where we draw everything
+
+        // Single place where we draw everything - rysowanie w kolejności tło, gołębie, pociski, HUD (warstwa interfejsu: labele, picturebox hearts i wand)
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -353,6 +773,19 @@ namespace Pigeon_Invaders
                 g.Clear(Color.Black);
             }
 
+            // Level2 graphic (2s duration)
+            if (showLevel2Graphic && level2Background != null)
+            {
+                g.DrawImage(level2Background, 0, 0);
+
+                // odliczamy ticki
+                level2GraphicTicks++;
+                if (level2GraphicTicks >= Level2GraphicDuration)
+                {
+                    showLevel2Graphic = false; // po 2s znika
+                }
+            }
+
             // PIGEONS – already scaled, no dst rect needed
             foreach (var p in pigeons)
             {
@@ -363,6 +796,31 @@ namespace Pigeon_Invaders
             foreach (var b in bullets)
             {
                 g.DrawImage(powerSprite, b.X, b.Y);
+            }
+
+            // FEATHERS – already scaled
+            foreach (var f in feathers)
+            {
+                g.DrawImage(featherSprite, f.X, f.Y);
+            }
+
+            // MEAT ROLLS – already scaled
+            foreach (var m in meatRolls)
+            {
+                g.DrawImage(meatRollSprite, m.X, m.Y);
+            }
+
+            // BOSS INTRO
+            if (showBossIntro && bossFightSprite != null)
+            {
+                g.DrawImage(bossFightSprite, 0, 0);
+                return;
+            }
+
+            // BOSS
+            if (boss != null)
+            {
+                g.DrawImage(bossSprite, boss.X, boss.Y);
             }
 
             // allow WinForms to draw HUD controls on top
