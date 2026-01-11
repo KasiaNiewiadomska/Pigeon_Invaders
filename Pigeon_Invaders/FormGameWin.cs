@@ -40,7 +40,6 @@ namespace Pigeon_Invaders
             newGame.Show(); // nie ShowDialog
 
         }
-<<<<<<< HEAD
 
         private void buttonExit_Click(object sender, EventArgs e)
         {
@@ -49,8 +48,7 @@ namespace Pigeon_Invaders
             startForm?.Close();
             Application.Exit();
         }
-=======
->>>>>>> fcf05b02568886f771c66614057ce19f3f2efe4b
+
     }
 }
 
