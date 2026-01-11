@@ -35,5 +35,12 @@ namespace Pigeon_Invaders
             // Pokazujemy ją jako modalne okno
             newGame.ShowDialog();
         }
+
+        private void buttonExit_Click(object sender, EventArgs e)
+        {
+            startPlayer?.controls.stop();
+            startForm?.Close();
+            Application.Exit();
+        }
     }
 }

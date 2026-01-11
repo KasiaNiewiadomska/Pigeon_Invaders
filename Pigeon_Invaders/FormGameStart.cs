@@ -9,7 +9,9 @@ namespace Pigeon_Invaders
     public partial class FormGameStart : Form
     {
         public WindowsMediaPlayer player = new WindowsMediaPlayer(); // publiczne, aby main miał dostęp
-        private bool soundOn = true;
+        
+        private bool soundOn = true; //prywatne pole do śledzenia stanu muzyki
+        public bool SoundOn => soundOn; //publiczne pole do sprawdzania stanu muzyki
         private string tempPath; // ścieżka tymczasowego pliku mp3
 
         public FormGameStart()
@@ -24,23 +26,22 @@ namespace Pigeon_Invaders
             pictureBoxPigeonInvaders.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxPigeonInvaders.BackColor = Color.Transparent;
 
-            using (var ms = Pigeon_Invaders.Properties.Resources.pigeon_song)
-            using (var fs = new System.IO.FileStream(
-                       System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3"),
-                       System.IO.FileMode.Create, System.IO.FileAccess.Write))
+            // ======= Przygotowanie pliku mp3 z zasobów =======
+            tempPath = Path.Combine(Path.GetTempPath(), "doveBird.mp3");
+
+            using (var ms = Pigeon_Invaders.Properties.Resources.doveBird) // nazwa zasobu w resources
+            using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
             {
                 ms.CopyTo(fs);
             }
 
-            // Teraz ustawiamy URL playera
-            string tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "pigeon_song.mp3");
+            // ======= Ustawienie playera =======
             player.URL = tempPath;
-            //player.URL = @"Pigeon_Invaders\pigeon_song.mp3";
             player.settings.volume = 50;
             player.settings.setMode("loop", true);
             player.controls.play();
 
-            // Obsługa zdarzenia zamykania, żeby usunąć tymczasowy plik
+            // ======= Obsługa zdarzenia zamykania, żeby usunąć tymczasowy plik =======
             this.FormClosing += FormGameStart_FormClosing;
         }
 
@@ -75,9 +76,17 @@ namespace Pigeon_Invaders
 
         private void FormGameStart_FormClosing(object sender, FormClosingEventArgs e)
         {
+            // zatrzymanie odtwarzacza
             player.controls.stop();
-            if (File.Exists(tempPath))
-                File.Delete(tempPath); // usuwamy tymczasowy plik mp3
+
+            // usuń starą muzykę główną
+            if (!string.IsNullOrEmpty(tempPath) && File.Exists(tempPath))
+                File.Delete(tempPath); // usuwa doveBird.mp3
+
+            // jeśli włączyliśmy muzykę Bossa, usuń też tymczasowy plik bossa
+            string bossMusicPath = Path.Combine(Path.GetTempPath(), "StMarysbuglecall.mp3");
+            if (File.Exists(bossMusicPath))
+                File.Delete(bossMusicPath);
         }
     }
 }

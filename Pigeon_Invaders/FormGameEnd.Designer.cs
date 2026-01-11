@@ -30,6 +30,7 @@
         {
             pictureBoxGameOver = new PictureBox();
             buttonPlayAgain = new Button();
+            buttonExit = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureBoxGameOver).BeginInit();
             SuspendLayout();
             // 
@@ -52,11 +53,22 @@
             buttonPlayAgain.UseVisualStyleBackColor = true;
             buttonPlayAgain.Click += buttonPlayAgain_Click;
             // 
+            // buttonExit
+            // 
+            buttonExit.Location = new Point(702, 26);
+            buttonExit.Name = "buttonExit";
+            buttonExit.Size = new Size(75, 23);
+            buttonExit.TabIndex = 2;
+            buttonExit.Text = "Exit";
+            buttonExit.UseVisualStyleBackColor = true;
+            buttonExit.Click += buttonExit_Click;
+            // 
             // FormGameEnd
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(buttonExit);
             Controls.Add(buttonPlayAgain);
             Controls.Add(pictureBoxGameOver);
             Name = "FormGameEnd";
@@ -69,5 +81,6 @@
 
         private PictureBox pictureBoxGameOver;
         private Button buttonPlayAgain;
+        private Button buttonExit;
     }
 }
