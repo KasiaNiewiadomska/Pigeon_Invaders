@@ -35,10 +35,8 @@ namespace Pigeon_Invaders
 
         private void buttonPlayAgain_Click(object sender, EventArgs e)
         {
-            this.Close(); // zamknij FormGameWin
-            FormGameMain newGame = new FormGameMain(startPlayer, startForm);
-            newGame.Show(); // nie ShowDialog
-
+            this.DialogResult = DialogResult.Retry;
+            this.Close();
         }
 
 

@@ -585,9 +585,15 @@ namespace Pigeon_Invaders
                 pigeons.Clear();   // usuń zwykłych wrogów
                 feathers.Clear();
 
-                // Utworzenie bossa TYLKO RAZ
+                // granice ruchu bossa
+                float leftBound = 0f;
+                float rightBound = ClientSize.Width;
+
+                // pozycja startowa bossa
                 float x = ClientSize.Width / 2f - Boss.Width / 2f;
-                boss = new Boss(x, -Boss.Height)
+
+                // UTWORZENIE BOSSA
+                boss = new Boss(x, -Boss.Height, leftBound, rightBound)
                 {
                     Lives = 30
                 };
@@ -642,7 +648,7 @@ namespace Pigeon_Invaders
             }
 
             // ruch bossa
-            boss.Y += 2;
+            boss.Move();
 
             if (boss.Y > ClientSize.Height || boss.Bounds.IntersectsWith(pictureBoxWand.Bounds))
             {
@@ -690,8 +696,20 @@ namespace Pigeon_Invaders
 
             FormGameWin winForm = new FormGameWin(startForm, startPlayer);
             this.Hide();
-            winForm.ShowDialog();
 
+            var result = winForm.ShowDialog();
+
+            if (result == DialogResult.Retry)
+            {
+                // restart gry
+                FormGameMain newGame = new FormGameMain(startPlayer, startForm);
+                newGame.Show();
+                this.Close(); // zamknij starą grę
+            }
+            else
+            {
+                this.Close();
+            }
         }
 
 

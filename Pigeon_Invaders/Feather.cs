@@ -20,6 +20,7 @@ namespace Pigeon_Invaders
 
         private const float Speed = 3.5f;
 
+
         public Feather(float x, float y, float leftBound, float rightBound)
         {
             X = x;
