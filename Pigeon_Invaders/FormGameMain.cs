@@ -567,6 +567,7 @@ namespace Pigeon_Invaders
                 return;
 
             if (points >= 60000)
+
             {
                 bossFightStarted = true;
                 showBossIntro = true;
