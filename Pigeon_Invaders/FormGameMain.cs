@@ -546,7 +546,7 @@ namespace Pigeon_Invaders
         private void CheckBossFight()
         {
 
-            if (!level2Started && points >= 20000)
+            if (!level2Started && points >= 30000)
             {
                 level2Started = true;
                 pigeons.Clear();
@@ -566,7 +566,7 @@ namespace Pigeon_Invaders
             if (bossFightStarted || bossDefeated)
                 return;
 
-            if (points >= 40000)
+            if (points >= 70000)
             {
                 bossFightStarted = true;
                 showBossIntro = true;
