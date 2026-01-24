@@ -566,6 +566,7 @@ namespace Pigeon_Invaders
             if (bossFightStarted || bossDefeated)
                 return;
 
+            if (points >= 70000)
             if (points >= 60000)
             {
                 bossFightStarted = true;
