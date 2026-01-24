@@ -30,10 +30,9 @@
         {
             buttonPlayAgain = new Button();
             pictureBoxYouWin = new PictureBox();
-<<<<<<< HEAD
+
             buttonExit = new Button();
-=======
->>>>>>> fcf05b02568886f771c66614057ce19f3f2efe4b
+
             ((System.ComponentModel.ISupportInitialize)pictureBoxYouWin).BeginInit();
             SuspendLayout();
             // 
@@ -55,7 +54,7 @@
             pictureBoxYouWin.TabIndex = 1;
             pictureBoxYouWin.TabStop = false;
             // 
-<<<<<<< HEAD
+
             // buttonExit
             // 
             buttonExit.Location = new Point(686, 31);
@@ -66,17 +65,15 @@
             buttonExit.UseVisualStyleBackColor = true;
             buttonExit.Click += buttonExit_Click;
             // 
-=======
->>>>>>> fcf05b02568886f771c66614057ce19f3f2efe4b
+
             // FormGameWin
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-<<<<<<< HEAD
+
             Controls.Add(buttonExit);
-=======
->>>>>>> fcf05b02568886f771c66614057ce19f3f2efe4b
+
             Controls.Add(pictureBoxYouWin);
             Controls.Add(buttonPlayAgain);
             Name = "FormGameWin";
@@ -89,9 +86,8 @@
 
         private Button buttonPlayAgain;
         private PictureBox pictureBoxYouWin;
-<<<<<<< HEAD
+
         private Button buttonExit;
-=======
->>>>>>> fcf05b02568886f771c66614057ce19f3f2efe4b
+
     }
 }
