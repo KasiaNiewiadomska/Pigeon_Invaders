@@ -17,7 +17,6 @@ namespace Pigeon_Invaders
         private FormGameStart startForm;      // referencja do startu
         private WindowsMediaPlayer startPlayer; // odtwarzacz muzyki
 
-
         public FormGameWin(FormGameStart start, WindowsMediaPlayer player)
         {
             InitializeComponent();
@@ -35,12 +34,9 @@ namespace Pigeon_Invaders
 
         private void buttonPlayAgain_Click(object sender, EventArgs e)
         {
-            this.Close(); // zamknij FormGameWin
-            FormGameMain newGame = new FormGameMain(startPlayer, startForm);
-            newGame.Show(); // nie ShowDialog
-
+            this.DialogResult = DialogResult.Retry;
+            this.Close();
         }
-
 
         private void buttonExit_Click(object sender, EventArgs e)
         {
@@ -49,7 +45,6 @@ namespace Pigeon_Invaders
             startForm?.Close();
             Application.Exit();
         }
-
     }
 }
 

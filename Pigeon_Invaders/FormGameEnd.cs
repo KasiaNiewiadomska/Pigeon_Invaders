@@ -21,7 +21,6 @@ namespace Pigeon_Invaders
             pictureBoxGameOver.Image = Pigeon_Invaders.Properties.Resources.GameOver;
             pictureBoxGameOver.SizeMode = PictureBoxSizeMode.Zoom; // opcjonalne, ładne dopasowanie
             pictureBoxGameOver.BackColor = Color.Transparent;
-
         }
 
         private void buttonPlayAgain_Click(object sender, EventArgs e)

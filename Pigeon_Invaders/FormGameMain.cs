@@ -32,32 +32,25 @@ namespace Pigeon_Invaders
 
         private int currentRow = 1;  // numer kolejnego rzędu gołębi (1..10)
         private int pigeonsInRow = 1;          // aktualna liczba gołębi w rzędzie
-        private bool increasing = true;        // kierunek: true = 1→10, false = 10→1
-        private int patternCycles = 0;          // ile pełnych cykli (1→10 lub 10→1)
+        private bool increasing = true;        // kierunek: true = od 1 do 10, false = od 10 do 1
+        private int patternCycles = 0;          // ile pełnych cykli (1 do 10 lub 10 do 1)
 
         private int energyPowerPoints = 1000;
         private int weaponPoints = 1000;
         private int earlyPigeonPoints = 1000;
 
-        // Pre-scaled sprites used in painting
         private Image backgroundImage;
         private Image pigeonSprite;
         private Image powerSprite;
 
-        // level 2
+        // Level 2
         private bool level2Started = false;   // czy Level 2 się rozpoczął
         private bool showLevel2Graphic = false; // czy rysować Level2 na górze ekranu
         private int level2GraphicTicks = 0;
         private const int Level2GraphicDuration = 100; // 100 ticków * 20ms = 2s
         private int level2DelayTicks = 0;     // do opóźnienia tworzenia rzędów
-        private const int Level2DelayDuration = 100; // ~2 sekundy (100 ticków po 20ms)
+        private const int Level2DelayDuration = 100; // 2 sekundy (100 ticków po 20ms)
         private Image level2Background;       // tło dla Level 2
-
-
-        // level 3
-
-        // level 4
-
 
         // BOSS
         private Boss boss = null;
@@ -69,7 +62,7 @@ namespace Pigeon_Invaders
         private int bossIntroTicks = 0;
         private int bossDelayTicks = 0;
 
-        private const int BossIntroDuration = 100; // ~2s (100 * 20ms)
+        private const int BossIntroDuration = 100; // 2s (100 * 20ms)
         private const int BossDelayDuration = 100;
 
         private bool bossMusicStarted = false; // czy muzyka Bossa została już włączona
@@ -117,23 +110,22 @@ namespace Pigeon_Invaders
             }
 
 
-            InitSprites();   // <<< pre-scale all images here
+            InitSprites();   // wstępne skalowanie obrazów
             InitTimers();
             InitHud();
 
             pictureBoxWand.MouseDown += PictureBoxWand_MouseDown;
-            //this.MouseDown += FormGameMain_MouseDown;
         }
 
-        //wszystkie obrazy skalowane raz na początku gry, przyspiesza rendering
+        // wszystkie obrazy skalowane raz na początku gry, przyspiesza rendering
         private void InitSprites()
         {
-            // GAME BACKGROUND – pre-scale once to form size
+            // tło gry skalowane raz do rozmiaru okna
             backgroundImage = new Bitmap(Properties.Resources.background, this.ClientSize);
-            this.BackgroundImage = null;           // don’t use BackgroundImage + Stretch
+            this.BackgroundImage = null;           // nie używać BackgroundImage + Stretch
             this.BackColor = Color.Black;
 
-            // GAME SPRITES – scaled once, use as-is in DrawImage
+            // game sprites - skalowane raz, używane bezpośrednio w DrawImage
             pigeonSprite = new Bitmap(Properties.Resources.pigeon, new Size((int)Pigeon.Width, (int)Pigeon.Height));
             powerSprite = new Bitmap(Properties.Resources.power, new Size(Power.Size, Power.Size));
             featherSprite = new Bitmap(Properties.Resources.feather_violet, new Size(Feather.Width, Feather.Height));
@@ -144,8 +136,7 @@ namespace Pigeon_Invaders
             bossFightSprite = new Bitmap(Properties.Resources.BossFight, this.ClientSize);
             bossBackgroundImage = new Bitmap(Properties.Resources.Krakow_square, this.ClientSize);
 
-
-            // HUD ICONS – pre-scale to pictureBox sizes and disable runtime scaling
+            // hud icons - skalowane raz do rozmiaru pictureBoxów, wyłączone skalowanie w czasie gry
             if (pictureBoxEnergyPower.Width > 0 && pictureBoxEnergyPower.Height > 0)
             {
                 pictureBoxEnergyPower.Image = new Bitmap(
@@ -192,21 +183,20 @@ namespace Pigeon_Invaders
             }
         }
 
-        //two timers from designer: timerPower and timerPigeon
-
+        // dwa timery z designera: timerPower i timerPigeon
         private void InitTimers()
         {
-            // Use timerPower from designer as game loop
+            //timerPower z disignera używamy jako głównej pętli gry
             if (timerPower != null)
             {
                 timerPower.Stop();
-                timerPower.Interval = 20;              // ~50 FPS, smooth and light
-                timerPower.Tick -= TimerPower_Tick;    // in case designer already wired it
+                timerPower.Interval = 20;
+                timerPower.Tick -= TimerPower_Tick;    
                 timerPower.Tick += TimerPower_Tick;
                 timerPower.Start();
             }
 
-            // Disable timerPigeon from designer
+            // timerPigeon nie jest już potrzebny
             if (timerPigeon != null)
             {
                 timerPigeon.Stop();
@@ -215,7 +205,7 @@ namespace Pigeon_Invaders
 
         }
 
-        //initializing labels from designer
+        //inicjalizacja labeli z designera
         private void InitHud()
         {
             labelPoints.Text = $"{points}";
@@ -242,7 +232,7 @@ namespace Pigeon_Invaders
             labelEarlyPigeon.Size = new Size(75, 30);
         }
 
-        // MAIN GAME LOOP
+        // Główna pętla gry, wywoływana co tick timera (20ms)
         private void TimerPower_Tick(object sender, EventArgs e) //wywoływane co tick timera, 50 razy na sekundę
         {
             UpdateBullets();
@@ -260,8 +250,8 @@ namespace Pigeon_Invaders
             UpdateFeathers();
             UpdateMeatRolls();
             CheckBossFight();
-            Invalidate(); // triggers OnPaint
-        
+            Invalidate();  //Invalidate powoduje wywołanie OnPaint, co rysuje całą scenę gry na nowo
+
         }
 
         private void UpdateBullets()
@@ -274,7 +264,7 @@ namespace Pigeon_Invaders
                 bool bulletRemoved = false;
                 RectangleF bRect = b.Bounds;
 
-                // bullet-boss collision
+                // kolizje pocisku z bossem
                 if (boss != null && bRect.IntersectsWith(boss.Bounds))
                 {
                     boss.Lives--;
@@ -283,10 +273,10 @@ namespace Pigeon_Invaders
                     continue;  // przechodzimy do następnego pocisku
                 }
 
-                // Bullet–Pigeon collisions
+                //kolizje pocisku z gołębiami
                 for (int j = pigeons.Count - 1; j >= 0; j--)
                 {
-                    if (bRect.IntersectsWith(pigeons[j].Bounds)) // if rectangle bullet and pigeon are colliding
+                    if (bRect.IntersectsWith(pigeons[j].Bounds)) // jeśli prostokąty pocisku i gołębia ze sobą kolidują
                     {
                         var hitPigeon = pigeons[j];
 
@@ -305,7 +295,7 @@ namespace Pigeon_Invaders
                     }
                 }
 
-                // Bullet off-screen
+                //pocisk poza ekranem
                 if (!bulletRemoved)
                 {
                     if (b.Y + Power.Size < 0 ||
@@ -333,7 +323,7 @@ namespace Pigeon_Invaders
                 }
             }
 
-            // Spawn a new row every rowTickInterval ticks
+            // tworzenie nowego rzędu co określoną liczbę ticków
             if (rowTickCounter >= rowTickInterval)
             {
                 rowTickCounter = 0;
@@ -352,7 +342,7 @@ namespace Pigeon_Invaders
                 var p = pigeons[i];
                 p.Move();
 
-                // Wand–Pigeon collision
+                // kolizje gołębia z różdżką
                 if (p.Bounds.IntersectsWith(wandRect))
                 {
                     pigeons.RemoveAt(i);
@@ -369,7 +359,7 @@ namespace Pigeon_Invaders
                     continue;
                 }
 
-                // Pigeon off-screen
+                // gołąb poza ekranem na dole
                 if (p.Y > this.ClientSize.Height)
                 {
                     pigeons.RemoveAt(i);
@@ -412,7 +402,7 @@ namespace Pigeon_Invaders
                 }
             }
 
-            // ZMIANA WZORCA
+            // Zmiana wzorca układania się gołębi w rzędach
             if (increasing)
             {
                 pigeonsInRow++;
@@ -424,7 +414,7 @@ namespace Pigeon_Invaders
 
                     if (patternCycles >= 3)
                     {
-                        increasing = false;   // zmiana na 10→1
+                        increasing = false;   // zmiana na od 10 do 1 gołębia w rzędzie
                         patternCycles = 0;
                     }
                 }
@@ -440,13 +430,12 @@ namespace Pigeon_Invaders
 
                     if (patternCycles >= 3)
                     {
-                        increasing = true;    // zmiana na 1→10
+                        increasing = true;    // zmiana na od 1 do 10 gołębi w rzędzie
                         patternCycles = 0;
                     }
                 }
             }
         }
-
 
         private void Shoot()
         {
@@ -585,9 +574,15 @@ namespace Pigeon_Invaders
                 pigeons.Clear();   // usuń zwykłych wrogów
                 feathers.Clear();
 
-                // Utworzenie bossa TYLKO RAZ
+                // granice ruchu bossa
+                float leftBound = 0f;
+                float rightBound = ClientSize.Width;
+
+                // pozycja startowa bossa
                 float x = ClientSize.Width / 2f - Boss.Width / 2f;
-                boss = new Boss(x, -Boss.Height)
+
+                // UTWORZENIE BOSSA
+                boss = new Boss(x, -Boss.Height, leftBound, rightBound)
                 {
                     Lives = 30
                 };
@@ -611,7 +606,7 @@ namespace Pigeon_Invaders
                     // zatrzymaj aktualną muzykę
                     startPlayer.controls.stop();
 
-                    // przygotuj tymczasowy plik z zasobu StMarysbuglecall
+                    // przygotuj tymczasowy plik z zasobu StMarysbuglecall - Hejnał Mariacki
                     string bossMusicPath = Path.Combine(Path.GetTempPath(), "StMarysbuglecall.mp3");
                     using (var ms = Pigeon_Invaders.Properties.Resources.StMarysbuglecall)
                     using (var fs = new FileStream(bossMusicPath, FileMode.Create, FileAccess.Write))
@@ -642,7 +637,7 @@ namespace Pigeon_Invaders
             }
 
             // ruch bossa
-            boss.Y += 2;
+            boss.Move();
 
             if (boss.Y > ClientSize.Height || boss.Bounds.IntersectsWith(pictureBoxWand.Bounds))
             {
@@ -664,20 +659,21 @@ namespace Pigeon_Invaders
 
                 ShowWinScreen();
             }
-
         }
 
         private void TryBossShoot()
         {
             if (boss == null) return;
 
-            // losowe pióra co tick z 15% szansą
+            // losowe pióra co tick z 5% szansą
             if (rand.NextDouble() < 0.05)
             {
-                GetPigeonRowBounds(out float leftBound, out float rightBound);
-
                 float x = boss.X + rand.Next(0, Boss.Width - Feather.Width);
                 float y = boss.Y + Boss.Height;
+
+                // podczas walki z bossem piórka odbijają się od całego ekranu
+                float leftBound = 0f;
+                float rightBound = ClientSize.Width;
 
                 feathers.Add(new Feather(x, y, leftBound, rightBound));
             }
@@ -690,10 +686,21 @@ namespace Pigeon_Invaders
 
             FormGameWin winForm = new FormGameWin(startForm, startPlayer);
             this.Hide();
-            winForm.ShowDialog();
 
+            var result = winForm.ShowDialog();
+
+            if (result == DialogResult.Retry)
+            {
+                // restart gry
+                FormGameMain newGame = new FormGameMain(startPlayer, startForm);
+                newGame.Show();
+                this.Close(); // zamknij starą grę
+            }
+            else
+            {
+                this.Close();
+            }
         }
-
 
         private void GetPigeonRowBounds(out float left, out float right)
         {
@@ -725,18 +732,29 @@ namespace Pigeon_Invaders
             int mouseX = e.X;
             int newX = mouseX - pictureBoxWand.Width / 2;
 
-            // granice rzędu gołębi
-            int spacing = 10;
-            int pigeonsInRow = MaxPigeonsInRow;
+            int minX, maxX;
 
-            int totalRowWidth = pigeonsInRow * (int)Pigeon.Width + (pigeonsInRow - 1) * spacing;
-            int rowLeft = (this.ClientSize.Width - totalRowWidth) / 2;
-            int rowRight = rowLeft + totalRowWidth;
+            if (bossFightStarted && boss != null)
+            {
+                // podczas walki z bossem wand może iść całą szerokością ekranu
+                minX = 0;
+                maxX = ClientSize.Width - pictureBoxWand.Width;
+            }
+            else
+            {
+                // granice rzędu gołębi
+                int spacing = 10;
+                int pigeonsInRow = MaxPigeonsInRow;
 
-            // ograniczenie ruchu różdżki do granic rzędu gołębi    
-            int minX = rowLeft;
-            int maxX = rowRight - pictureBoxWand.Width;
+                int totalRowWidth = pigeonsInRow * (int)Pigeon.Width + (pigeonsInRow - 1) * spacing;
+                int rowLeft = (this.ClientSize.Width - totalRowWidth) / 2;
+                int rowRight = rowLeft + totalRowWidth;
 
+                minX = rowLeft;
+                maxX = rowRight - pictureBoxWand.Width;
+            }
+
+            // ograniczenie do min/max
             if (newX < minX) newX = minX;
             if (newX > maxX) newX = maxX;
 
@@ -751,19 +769,18 @@ namespace Pigeon_Invaders
             }
         }
 
-
-        // Single place where we draw everything - rysowanie w kolejności tło, gołębie, pociski, HUD (warstwa interfejsu: labele, picturebox hearts i wand)
+        // miejsce gdzie wszystko jest rysowne w kolejności tło, gołębie, pociski, HUD (warstwa interfejsu: labele, picturebox hearts i wand)
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
 
-            // Speed over quality
+            // szybsze rysowanie kosztem jakości
             g.SmoothingMode = SmoothingMode.None;
             g.InterpolationMode = InterpolationMode.NearestNeighbor;
             g.CompositingQuality = CompositingQuality.HighSpeed;
             g.PixelOffsetMode = PixelOffsetMode.HighSpeed;
 
-            // BACKGROUND
+            // tło
             if (backgroundImage != null)
             {
                 g.DrawImage(backgroundImage, 0, 0);
@@ -773,7 +790,7 @@ namespace Pigeon_Invaders
                 g.Clear(Color.Black);
             }
 
-            // Level2 graphic (2s duration)
+            // grafika Level2 pokazana na górze ekranu przez 2s
             if (showLevel2Graphic && level2Background != null)
             {
                 g.DrawImage(level2Background, 0, 0);
@@ -786,31 +803,31 @@ namespace Pigeon_Invaders
                 }
             }
 
-            // PIGEONS – already scaled, no dst rect needed
+            // gołębie - rysowane w oryginalnym, przeskalowanym rozmiarze
             foreach (var p in pigeons)
             {
                 g.DrawImage(pigeonSprite, p.X, p.Y);
             }
 
-            // BULLETS – already scaled
+            // pociski rysowane w oryginalnym, przeskalowanym rozmiarze
             foreach (var b in bullets)
             {
                 g.DrawImage(powerSprite, b.X, b.Y);
             }
 
-            // FEATHERS – already scaled
+            // pióra rysowane w oryginalnym, przeskalowanym rozmiarze
             foreach (var f in feathers)
             {
                 g.DrawImage(featherSprite, f.X, f.Y);
             }
 
-            // MEAT ROLLS – already scaled
+            // gołąbki rysowane w oryginalnym, przeskalowanym rozmiarze
             foreach (var m in meatRolls)
             {
                 g.DrawImage(meatRollSprite, m.X, m.Y);
             }
 
-            // BOSS INTRO
+            // intro bossa na pełnym ekranie
             if (showBossIntro && bossFightSprite != null)
             {
                 g.DrawImage(bossFightSprite, 0, 0);
@@ -823,7 +840,7 @@ namespace Pigeon_Invaders
                 g.DrawImage(bossSprite, boss.X, boss.Y);
             }
 
-            // allow WinForms to draw HUD controls on top
+            // pozwól WinForms narysować kontrolki HUD na wierzchu
             base.OnPaint(e);
         }
     }

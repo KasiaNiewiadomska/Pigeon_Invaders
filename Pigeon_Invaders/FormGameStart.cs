@@ -18,7 +18,7 @@ namespace Pigeon_Invaders
         {
             InitializeComponent();
 
-            // ======= Ustawienia grafiki =======
+            // Ustawienia grafiki
             this.BackgroundImage = Pigeon_Invaders.Properties.Resources.background;
             this.BackgroundImageLayout = ImageLayout.Stretch;
 
@@ -26,22 +26,22 @@ namespace Pigeon_Invaders
             pictureBoxPigeonInvaders.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxPigeonInvaders.BackColor = Color.Transparent;
 
-            // ======= Przygotowanie pliku mp3 z zasobów =======
+            // Przygotowanie pliku mp3 z zasobów
             tempPath = Path.Combine(Path.GetTempPath(), "doveBird.mp3");
 
-            using (var ms = Pigeon_Invaders.Properties.Resources.doveBird) // nazwa zasobu w resources
+            using (var ms = Pigeon_Invaders.Properties.Resources.doveBird) //nazwa zasobu w resources
             using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
             {
                 ms.CopyTo(fs);
             }
 
-            // ======= Ustawienie playera =======
+            //Ustawienie playera
             player.URL = tempPath;
             player.settings.volume = 50;
             player.settings.setMode("loop", true);
             player.controls.play();
 
-            // ======= Obsługa zdarzenia zamykania, żeby usunąć tymczasowy plik =======
+            //Obsługa zdarzenia zamykania, żeby usunąć tymczasowy plik =======
             this.FormClosing += FormGameStart_FormClosing;
         }
 
